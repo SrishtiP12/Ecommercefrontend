@@ -1,25 +1,286 @@
-import logo from './logo.svg';
-import './App.css';
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import { BrowserRouter as Router, Routes, Route, Link, useNavigate } from "react-router-dom";
+import Login from "./Login";
+import Register from "./Register";
+import Cart from "./Cart";
 
-function App() {
+function Profile({ user }) {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-white font-['Montserrat']">
+      <div className="bg-white rounded-3xl shadow-2xl p-10 w-full max-w-md flex flex-col items-center">
+        <h2 className="text-3xl font-extrabold mb-6 text-green-700">My Profile</h2>
+        <div className="text-lg text-gray-800 mb-2">Name: {user?.name || 'N/A'}</div>
+        <div className="text-lg text-gray-800 mb-2">Email: {user?.email || 'N/A'}</div>
+      </div>
     </div>
   );
 }
 
-export default App;
+function MainApp({ cartItems, setCartItems, user }) {
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Timer state for Exclusive Offer
+  const [timer, setTimer] = useState({ days: 2, hours: 14, mins: 36, secs: 0 });
+
+  useEffect(() => {
+    axios
+      .get("/api/products")
+      .then((res) => {
+        setProducts(res.data);
+        setLoading(false);
+      })
+      .catch((err) => {
+        setError("Failed to load products");
+        setLoading(false);
+      });
+  }, []);
+
+  // Timer logic
+  useEffect(() => {
+    // Set initial offer end time (e.g., 2 days, 14 hours, 36 mins from now)
+    const offerEnd = new Date(Date.now() + ((2 * 24 + 14) * 60 + 36) * 60 * 1000);
+    const interval = setInterval(() => {
+      const now = new Date();
+      const diff = offerEnd - now;
+      if (diff <= 0) {
+        setTimer({ days: 0, hours: 0, mins: 0, secs: 0 });
+        clearInterval(interval);
+        return;
+      }
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+      const mins = Math.floor((diff / (1000 * 60)) % 60);
+      const secs = Math.floor((diff / 1000) % 60);
+      setTimer({ days, hours, mins, secs });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const bestSelling = products.slice(0, 3);
+  const navigate = useNavigate();
+
+  // Add to cart handler (for demo, just adds first product)
+  const addToCart = (product) => {
+    setCartItems((prev) => {
+      const exists = prev.find((item) => item._id === product._id);
+      if (exists) {
+        return prev.map((item) =>
+          item._id === product._id ? { ...item, qty: item.qty + 1 } : item
+        );
+      }
+      return [...prev, { ...product, qty: 1 }];
+    });
+  };
+
+  return (
+    <div className="bg-gradient-to-b from-green-50 to-white min-h-screen flex flex-col font-['Montserrat']">
+      {/* Navbar */}
+      <nav className="flex items-center justify-between px-8 py-6 shadow-sm bg-[#C6F3D8]/100 border-b sticky top-0 z-20">
+        <div className="font-extrabold text-2xl tracking-tight text-green-700">
+          <Link to="/">Délla</Link>
+        </div>
+        <ul className="hidden md:flex space-x-10 text-gray-700 font-medium text-lg">
+          <li><Link to="/" className="hover:text-green-700 transition">Home</Link></li>
+          <li><a href="#all-products" className="hover:text-green-700 transition">Shop</a></li>
+          <li><a href="#categories" className="hover:text-green-700 transition">Categories</a></li>
+          <li><a href="#" className="hover:text-green-700 transition">Contact</a></li>
+        </ul>
+        <div className="flex items-center gap-4">
+          <Link to="/cart" className="relative">
+            <svg className="w-7 h-7 text-green-700" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4"/><circle cx="7" cy="21" r="1"/><circle cx="20" cy="21" r="1"/></svg>
+            {cartItems.length > 0 && <span className="absolute -top-2 -right-2 bg-green-700 text-white text-xs rounded-full px-2 py-0.5">{cartItems.length}</span>}
+          </Link>
+          {user ? (
+            <Link to="/profile"><button className="border border-green-700 text-green-700 px-6 py-2 rounded-full font-semibold hover:bg-green-700 hover:text-white transition text-base shadow-sm">My Profile</button></Link>
+          ) : (
+            <Link to="/login"><button className="border border-green-700 text-green-700 px-6 py-2 rounded-full font-semibold hover:bg-green-700 hover:text-white transition text-base shadow-sm">Login</button></Link>
+          )}
+        </div>
+      </nav>
+
+      {/* Hero Banner */}
+      <section className="flex flex-col md:flex-row items-center justify-between px-8 py-20 md:py-32 bg-[#C6F3D8]">
+        {/* Left: Text */}
+        <div className="flex-1 max-w-xl z-10">
+          <h1 className="text-5xl md:text-6xl font-extrabold mb-8 leading-tight text-[#23472B]" style={{fontFamily: 'Montserrat, serif'}}>
+            Discover and<br />Find Your Own<br />Fashion!
+          </h1>
+          <p className="text-lg md:text-xl text-[#23472B] mb-10 max-w-md opacity-80">Explore our curated collection of stylish clothing and accessories tailored to your unique taste.</p>
+          <button className="bg-[#23472B] text-white px-10 py-4 rounded shadow-lg font-bold text-lg hover:bg-[#1a3520] transition mt-4" style={{boxShadow: '0 8px 24px 0 #23472B33'}}>EXPLORE NOW</button>
+        </div>
+        {/* Right: Image in Card */}
+        <div className="flex-1 flex justify-center z-10 mt-12 md:mt-0">
+          <div className="relative bg-[#5AC37B] rounded-[3rem] w-[340px] h-[420px] flex items-end justify-center shadow-xl">
+            <img src="/hero.png" alt="High Fashion Lookbook" className="h-[400px] w-[260px] object-contain rounded-b-[3rem] z-10" style={{marginBottom: 0}} />
+            {/* Decorative dots */}
+            <div className="absolute right-6 top-16 grid grid-cols-3 gap-1">
+              {[...Array(9)].map((_, i) => (
+                <span key={i} className="w-2 h-2 bg-[#23472B] rounded-full opacity-30 inline-block" />
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Best Selling Products */}
+      <section className="py-20 px-8 max-w-7xl mx-auto">
+        <h2 className="text-3xl font-bold text-center mb-3 text-gray-900">Best Selling</h2>
+        <p className="text-center text-gray-500 mb-12 text-lg">Our most-loved pieces, handpicked for you.</p>
+        {loading ? (
+          <div className="text-center text-gray-400">Loading...</div>
+        ) : error ? (
+          <div className="text-center text-red-500">{error}</div>
+        ) : (
+          <div className="flex flex-col md:flex-row gap-10 justify-center items-center md:items-stretch">
+            {bestSelling.map((item, idx) => (
+              <div key={item._id || idx} className="bg-white rounded-3xl shadow-xl p-8 flex flex-col items-center w-72 hover:scale-105 hover:shadow-2xl transition-all duration-300 border border-green-50">
+                <img src={item.image || 'https://via.placeholder.com/160x192'} alt={item.name} className="rounded-2xl w-48 h-56 object-cover mb-5 shadow-md" />
+                <div className="font-semibold text-lg mb-1 text-gray-900">{item.name}</div>
+                <div className="text-green-700 text-xl font-bold mb-2">${item.price}</div>
+                <div className="text-yellow-500 text-base">★ {item.rating || 4.8} <span className="text-gray-400 text-sm">({item.numReviews || 100})</span></div>
+                <button onClick={() => addToCart(item)} className="mt-4 bg-green-700 text-white px-6 py-2 rounded-full font-semibold hover:bg-green-800 transition shadow">Add to Cart</button>
+              </div>
+            ))}
+          </div>
+        )}
+        <div className="flex justify-center mt-10">
+          <a href="#all-products" className="border border-green-700 text-green-700 px-8 py-2 rounded-full font-semibold hover:bg-green-700 hover:text-white transition text-lg shadow">View All</a>
+        </div>
+      </section>
+
+      {/* All Products Grid */}
+      <section className="py-20 px-8 bg-white max-w-7xl mx-auto" id="all-products">
+        <h2 className="text-3xl font-bold text-center mb-10 text-gray-900">All Products</h2>
+        {loading ? (
+          <div className="text-center text-gray-400">Loading...</div>
+        ) : error ? (
+          <div className="text-center text-red-500">{error}</div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-12">
+            {products.map((item, idx) => (
+              <div key={item._id || idx} className="bg-green-50 rounded-3xl shadow p-6 flex flex-col items-center hover:scale-105 hover:shadow-2xl transition-all duration-300 border border-green-100">
+                <img src={item.image || 'https://via.placeholder.com/160x176'} alt={item.name} className="rounded-xl mb-4 w-40 h-44 object-cover shadow" />
+                <div className="font-semibold text-lg mb-1 text-gray-900">{item.name}</div>
+                <div className="text-green-700 text-lg font-bold mb-1">${item.price}</div>
+                <div className="text-yellow-500 text-base">★ {item.rating || 4.5} <span className="text-gray-400 text-sm">({item.numReviews || 50})</span></div>
+                <button onClick={() => addToCart(item)} className="mt-4 bg-green-700 text-white px-6 py-2 rounded-full font-semibold hover:bg-green-800 transition shadow">Add to Cart</button>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* Exclusive Offer */}
+      <section className="py-20 px-8 bg-gradient-to-r from-green-100 to-green-200 flex flex-col md:flex-row items-center gap-12 md:gap-24 rounded-3xl shadow-xl max-w-6xl mx-auto my-20">
+        <div className="flex-1 flex justify-center">
+          <img src="https://images.unsplash.com/photo-1519125323398-675f0ddb6308?auto=format&fit=crop&w=400&q=80" alt="Exclusive" className="rounded-2xl w-64 h-80 object-cover shadow-2xl border-8 border-white" />
+        </div>
+        <div className="flex-1 max-w-lg">
+          <h3 className="text-2xl font-bold mb-4 text-green-800">Exclusive Offer</h3>
+          <p className="text-gray-700 mb-8 text-lg">Limited time only! Get an extra <span className="font-bold text-green-700">20% off</span> on selected items. Hurry up before the offer ends.</p>
+          <div className="flex space-x-6 mb-8">
+            <div className="bg-white rounded-xl px-6 py-4 text-center shadow">
+              <div className="font-bold text-2xl text-green-700">{String(timer.days).padStart(2, '0')}</div>
+              <div className="text-xs text-gray-500">Days</div>
+            </div>
+            <div className="bg-white rounded-xl px-6 py-4 text-center shadow">
+              <div className="font-bold text-2xl text-green-700">{String(timer.hours).padStart(2, '0')}</div>
+              <div className="text-xs text-gray-500">Hours</div>
+            </div>
+            <div className="bg-white rounded-xl px-6 py-4 text-center shadow">
+              <div className="font-bold text-2xl text-green-700">{String(timer.mins).padStart(2, '0')}</div>
+              <div className="text-xs text-gray-500">Mins</div>
+            </div>
+            <div className="bg-white rounded-xl px-6 py-4 text-center shadow">
+              <div className="font-bold text-2xl text-green-700">{String(timer.secs).padStart(2, '0')}</div>
+              <div className="text-xs text-gray-500">Secs</div>
+            </div>
+          </div>
+          <a href="#best-selling" className="bg-green-700 text-white px-10 py-3 rounded-full font-bold text-lg shadow-lg hover:bg-green-800 transition">Get Offer</a>
+        </div>
+      </section>
+
+      {/* Categories */}
+      <section className="py-20 px-8 bg-white max-w-7xl mx-auto" id="categories">
+        <h2 className="text-3xl font-bold text-center mb-10 text-gray-900">Categories</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-12">
+          <div className="bg-green-50 rounded-3xl shadow p-8 flex flex-col items-center hover:scale-105 hover:shadow-2xl transition-all duration-300 border border-green-100">
+            <img src="https://images.unsplash.com/photo-1519125323398-675f0ddb6308?auto=format&fit=crop&w=400&q=80" alt="Accessories" className="rounded-xl mb-5 w-40 h-44 object-cover shadow" />
+            <div className="font-semibold text-xl mb-2 text-green-800">Accessories</div>
+            <div className="text-gray-600 text-base text-center">Complete your look with our unique accessories collection.</div>
+          </div>
+          <div className="bg-green-50 rounded-3xl shadow p-8 flex flex-col items-center hover:scale-105 hover:shadow-2xl transition-all duration-300 border border-green-100">
+            <img src="https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?auto=format&fit=crop&w=400&q=80" alt="Dresses" className="rounded-xl mb-5 w-40 h-44 object-cover shadow" />
+            <div className="font-semibold text-xl mb-2 text-green-800">Dresses</div>
+            <div className="text-gray-600 text-base text-center">Discover the latest in designer dresses and evening wear.</div>
+          </div>
+          <div className="bg-green-50 rounded-3xl shadow p-8 flex flex-col items-center hover:scale-105 hover:shadow-2xl transition-all duration-300 border border-green-100">
+            <img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=400&q=80" alt="Outerwear" className="rounded-xl mb-5 w-40 h-44 object-cover shadow" />
+            <div className="font-semibold text-xl mb-2 text-green-800">Outerwear</div>
+            <div className="text-gray-600 text-base text-center">Our outerwear keeps you stylish and warm all season.</div>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="bg-green-900 text-white py-14 px-8 mt-auto">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12">
+          <div>
+            <div className="font-extrabold text-2xl mb-3">Délla</div>
+            <div className="text-green-100 text-base mb-6">Elevate your wardrobe with our curated collection of modern, minimal fashion essentials.</div>
+            <div className="flex space-x-4">
+              <a href="#" className="hover:text-green-300 text-xl">FB</a>
+              <a href="#" className="hover:text-green-300 text-xl">IG</a>
+              <a href="#" className="hover:text-green-300 text-xl">TW</a>
+            </div>
+          </div>
+          <div>
+            <div className="font-semibold mb-3 text-lg">Shop</div>
+            <ul className="text-green-100 text-base space-y-2">
+              <li><a href="#all-products" className="hover:text-green-300">All Products</a></li>
+              <li><a href="#best-selling" className="hover:text-green-300">Best Sellers</a></li>
+              <li><a href="#" className="hover:text-green-300">New Arrivals</a></li>
+              <li><a href="#" className="hover:text-green-300">Sale</a></li>
+            </ul>
+          </div>
+          <div>
+            <div className="font-semibold mb-3 text-lg">Company</div>
+            <ul className="text-green-100 text-base space-y-2">
+              <li><a href="#" className="hover:text-green-300">About Us</a></li>
+              <li><a href="#" className="hover:text-green-300">Contact</a></li>
+              <li><a href="#" className="hover:text-green-300">Careers</a></li>
+              <li><a href="#" className="hover:text-green-300">Blog</a></li>
+            </ul>
+          </div>
+          <div>
+            <div className="font-semibold mb-3 text-lg">Stay Up To Date</div>
+            <form className="flex flex-col space-y-3">
+              <input type="email" placeholder="Enter your email" className="px-4 py-3 rounded text-green-900 bg-green-50 border-none focus:ring-2 focus:ring-green-300" />
+              <button className="bg-green-700 hover:bg-green-600 text-white px-4 py-3 rounded font-semibold transition">Subscribe</button>
+            </form>
+          </div>
+        </div>
+        <div className="text-center text-green-200 text-sm mt-12">&copy; {new Date().getFullYear()} Délla. All rights reserved.</div>
+      </footer>
+    </div>
+  );
+}
+
+export default function App() {
+  const [cartItems, setCartItems] = useState([]);
+  const [user, setUser] = useState(null);
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<MainApp cartItems={cartItems} setCartItems={setCartItems} user={user} />} />
+        <Route path="/login" element={<Login onLogin={setUser} />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/cart" element={<Cart items={cartItems} onCheckout={() => alert('Checkout!')} />} />
+        <Route path="/profile" element={<Profile user={user} />} />
+      </Routes>
+    </Router>
+  );
+}
