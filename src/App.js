@@ -2,9 +2,9 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { BrowserRouter as Router, Routes, Route, Link, useNavigate } from "react-router-dom";
 import Profile from "./components/Profile";
-import Login from "./Login";
-import Register from "./Register";
-import Cart from "./Cart";
+import Login from "./components/Login";
+import Register from "./components/Register";
+import Cart from "./components/Cart";
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
