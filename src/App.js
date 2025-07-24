@@ -1,21 +1,10 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { BrowserRouter as Router, Routes, Route, Link, useNavigate } from "react-router-dom";
-import Login from "./Login";
-import Register from "./Register";
-import Cart from "./Cart";
-
-function Profile({ user }) {
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-white font-['Montserrat']">
-      <div className="bg-white rounded-3xl shadow-2xl p-10 w-full max-w-md flex flex-col items-center">
-        <h2 className="text-3xl font-extrabold mb-6 text-green-700">My Profile</h2>
-        <div className="text-lg text-gray-800 mb-2">Name: {user?.name || 'N/A'}</div>
-        <div className="text-lg text-gray-800 mb-2">Email: {user?.email || 'N/A'}</div>
-      </div>
-    </div>
-  );
-}
+import Login from "./components/Login";
+import Register from "./components/Register";
+import Cart from "./components/Cart";
+import Profile from "./components/Profile";
 
 function MainApp({ cartItems, setCartItems, user }) {
   const [products, setProducts] = useState([]);
@@ -37,6 +26,9 @@ function MainApp({ cartItems, setCartItems, user }) {
         setLoading(false);
       });
   }, []);
+
+  console.log(products);
+  
 
   // Timer logic
   useEffect(() => {
@@ -279,7 +271,8 @@ export default function App() {
         <Route path="/login" element={<Login onLogin={setUser} />} />
         <Route path="/register" element={<Register />} />
         <Route path="/cart" element={<Cart items={cartItems} onCheckout={() => alert('Checkout!')} />} />
-        <Route path="/profile" element={<Profile user={user} />} />
+        {/* <Route path="/profile" element={<Profile user={user} />} /> */}
+        <Route path="/profile" element={<Profile user={user}/>}/>
       </Routes>
     </Router>
   );
