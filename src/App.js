@@ -30,7 +30,7 @@ function MainApp({ cartItems, setCartItems, user }) {
       });
   }, []);
 
-  console.log(products);
+//   console.log(products);
   
 
   // Timer logic
@@ -58,16 +58,51 @@ function MainApp({ cartItems, setCartItems, user }) {
   const navigate = useNavigate();
 
   // Add to cart handler (for demo, just adds first product)
-  const addToCart = (product) => {
+  const addToCart = async(product) => {
+    console.log("add to cart func");
+    
     setCartItems((prev) => {
       const exists = prev.find((item) => item._id === product._id);
+      console.log(exists);
+      
       if (exists) {
-        return prev.map((item) =>
-          item._id === product._id ? { ...item, qty: item.qty + 1 } : item
+        console.log(exists);
+        
+        return prev.map((item) =>            
+          item._id === product._id ? { ...item, qty: item.qty + 1 } : item 
+            
         );
       }
       return [...prev, { ...product, qty: 1 }];
-    });
+    } 
+    );
+    // Send to backend
+  try {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      console.warn("⚠️ No token found in localStorage");
+      return;
+    }
+    
+    console.log(product);
+    console.log(`${localStorage.getItem('token')}`);
+    
+    
+      var res = await axios.post("http://localhost:5000/api/cart/add", {
+          // your request body
+          product: product,
+      }, {
+          headers: {
+              Authorization: `Bearer ${localStorage.getItem('token')}`,
+              'Content-Type': 'application/json'
+          }
+      });
+
+    console.log("✅ Backend Response:", res.data);
+  } catch (error) {
+    console.error("❌ Error sending to backend:", error.response?.data || error.message);
+  }
   };
 
   return (
@@ -130,56 +165,31 @@ function MainApp({ cartItems, setCartItems, user }) {
 
 
      {/* Best Selling Products */}
-<section className="py-24 px-6 md:px-12 max-w-7xl mx-auto bg-[#F9FFF8]">
-  <h2 className="text-4xl font-extrabold text-center mb-4 text-[#23472B]" style={{ fontFamily: 'Montserrat, sans-serif' }}>
-    Best Selling
-  </h2>
-  <p className="text-center text-[#5C735F] mb-14 text-lg">
-    Our most-loved pieces, handpicked for your style.
-  </p>
-
-  {loading ? (
-    <div className="text-center text-gray-400">Loading...</div>
-  ) : error ? (
-    <div className="text-center text-red-500">{error}</div>
-  ) : (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10 place-items-center">
-      {bestSelling.map((item, idx) => (
-        <div
-          key={item._id || idx}
-          className="bg-white rounded-3xl shadow-xl hover:shadow-2xl transition-all duration-300 p-6 flex flex-col items-center w-72 border border-[#E6F4EB]"
-        >
-          <img
-            src={item.image || 'https://via.placeholder.com/160x192'}
-            alt={item.name}
-            className="rounded-2xl w-48 h-56 object-cover mb-5 shadow-sm"
-          />
-          <h3 className="font-semibold text-xl mb-1 text-[#23472B]">{item.name}</h3>
-          <p className="text-[#1A6E42] text-lg font-bold mb-2">${item.price}</p>
-          <div className="text-yellow-500 text-base">
-            ★ {item.rating || 4.8}{' '}
-            <span className="text-gray-400 text-sm">({item.numReviews || 100})</span>
+<section className="py-20 px-8 max-w-7xl mx-auto">
+        <h2 className="text-3xl font-bold text-center mb-3 text-gray-900">Best Selling</h2>
+        <p className="text-center text-gray-500 mb-12 text-lg">Our most-loved pieces, handpicked for you.</p>
+        {loading ? (
+          <div className="text-center text-gray-400">Loading...</div>
+        ) : error ? (
+          <div className="text-center text-red-500">{error}</div>
+        ) : (
+          <div className="flex flex-col md:flex-row gap-10 justify-center items-center md:items-stretch">
+            {bestSelling.map((item, idx) => (
+              <div key={item._id || idx} className="bg-white rounded-3xl shadow-xl p-8 flex flex-col items-center w-72 hover:scale-105 hover:shadow-2xl transition-all duration-300 border border-green-50">
+                <img src={item.image || 'https://via.placeholder.com/160x192'} alt={item.name} className="rounded-2xl w-48 h-56 object-cover mb-5 shadow-md" />
+                <div className="font-semibold text-lg mb-1 text-gray-900">{item.name}</div>
+                <div className="text-green-700 text-xl font-bold mb-2">${item.price}</div>
+                <div className="text-yellow-500 text-base">★ {item.rating || 4.8} <span className="text-gray-400 text-sm">({item.numReviews || 100})</span></div>
+                <button onClick={() => {addToCart(item); console.log("add to cart button pressed")
+                }} className="mt-4 bg-green-700 text-white px-6 py-2 rounded-full font-semibold hover:bg-green-800 transition shadow">Add to Cart</button>
+              </div>
+            ))}
           </div>
-          <button
-            onClick={() => addToCart(item)}
-            className="mt-4 bg-[#23472B] text-white px-6 py-2 rounded-full font-semibold hover:bg-[#1b3a22] transition shadow-lg"
-          >
-            Add to Cart
-          </button>
+        )}
+        <div className="flex justify-center mt-10">
+          <a href="#all-products" className="border border-green-700 text-green-700 px-8 py-2 rounded-full font-semibold hover:bg-green-700 hover:text-white transition text-lg shadow">View All</a>
         </div>
-      ))}
-    </div>
-  )}
-
-  <div className="flex justify-center mt-14">
-    <a
-      href="#all-products"
-      className="border-2 border-[#23472B] text-[#23472B] px-8 py-3 rounded-full font-semibold hover:bg-[#23472B] hover:text-white transition text-lg shadow-md"
-    >
-      View All
-    </a>
-  </div>
-</section>
+      </section>
 
 
       {/* All Products Grid */}
@@ -356,6 +366,11 @@ function MainApp({ cartItems, setCartItems, user }) {
 export default function App() {
   const [cartItems, setCartItems] = useState([]);
   const [user, setUser] = useState(null);
+
+  if(cartItems){
+    console.log(cartItems);
+    
+  }
   return (
     <Router>
       <Routes>
