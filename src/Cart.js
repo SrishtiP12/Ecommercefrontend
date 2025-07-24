@@ -1,45 +1,179 @@
-import React from "react";
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
 
-export default function Cart({ items = [], onCheckout }) {
-  // items: [{ _id, name, image, price, qty }]
-  const total = items.reduce((sum, item) => sum + item.price * item.qty, 0);
+const Cart = () => {
+  const [cartItems, setCartItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [message, setMessage] = useState('');
+
+  const API_BASE = '/api/cart';
+
+  // Fetch cart from backend
+  const fetchCart = async () => {
+    try {
+      setLoading(true);
+      const res = await axios.get(API_BASE, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+      setCartItems(res.data.items || []);
+    } catch (error) {
+      console.error('Error fetching cart:', error);
+      setMessage('⚠️ Failed to load cart.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Update quantity of a product in cart
+  const updateQuantity = async (productId, qty) => {
+    if (qty < 1) return;
+    try {
+      await axios.put(
+        `${API_BASE}/update`,
+        { productId, qty },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
+        }
+      );
+      fetchCart();
+    } catch (error) {
+      console.error('Error updating quantity:', error);
+    }
+  };
+
+  // Remove item from cart
+  const removeItem = async (productId) => {
+    try {
+      await axios.delete(`${API_BASE}/remove/${productId}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+      fetchCart();
+    } catch (error) {
+      console.error('Error removing item:', error);
+    }
+  };
+
+  // Clear all cart items
+  const clearCart = async () => {
+    try {
+      await axios.delete(`${API_BASE}/clear`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+      fetchCart();
+    } catch (error) {
+      console.error('Error clearing cart:', error);
+    }
+  };
+
+  // Dummy checkout (can integrate payment later)
+  const checkout = async () => {
+    try {
+      setMessage('✅ Checkout successful!');
+      await clearCart();
+    } catch (error) {
+      console.error('Error during checkout:', error);
+    }
+  };
+
+  // Calculate total price
+  const getTotal = () => {
+    return cartItems.reduce(
+      (total, item) => total + item.quantity * item.product.price,
+      0
+    );
+  };
+
+  useEffect(() => {
+    fetchCart();
+  }, []);
+
+  if (loading) {
+    return <p className="text-center mt-10 text-xl">Loading cart...</p>;
+  }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-white font-['Montserrat']">
-      <div className="bg-white rounded-3xl shadow-2xl p-10 w-full max-w-2xl flex flex-col">
-        <h2 className="text-3xl font-extrabold mb-8 text-green-700 text-center">Your Cart</h2>
-        {items.length === 0 ? (
-          <div className="text-gray-500 text-center mb-8">Your cart is empty.</div>
-        ) : (
-          <div className="divide-y divide-green-100 mb-8">
-            {items.map((item) => (
-              <div key={item._id} className="flex items-center py-4 gap-4">
-                <img src={item.image} alt={item.name} className="w-20 h-20 rounded-xl object-cover border border-green-100" />
-                <div className="flex-1">
-                  <div className="font-semibold text-lg text-gray-900">{item.name}</div>
-                  <div className="text-green-700 font-bold">${item.price}</div>
+    <div className="max-w-4xl mx-auto p-6">
+      <h2 className="text-3xl font-bold mb-6">🛒 Your Shopping Cart</h2>
+
+      {message && (
+        <div className="bg-green-100 text-green-800 px-4 py-2 rounded mb-6">
+          {message}
+        </div>
+      )}
+
+      {cartItems.length === 0 ? (
+        <p className="text-gray-600">Your cart is empty.</p>
+      ) : (
+        <>
+          <div className="space-y-6">
+            {cartItems.map((item) => (
+              <div
+                key={item.product._id}
+                className="flex justify-between items-start border-b pb-4"
+              >
+                <div>
+                  <h3 className="text-xl font-semibold">{item.product.name}</h3>
+                  <p className="text-gray-600">Price: ₹{item.product.price}</p>
+                  <div className="mt-2 flex items-center">
+                    <label className="mr-2">Qty:</label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={item.quantity}
+                      onChange={(e) =>
+                        updateQuantity(item.product._id, parseInt(e.target.value))
+                      }
+                      className="border px-2 py-1 rounded w-20"
+                    />
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <button className="px-2 py-1 bg-green-100 rounded hover:bg-green-200 font-bold">-</button>
-                  <span className="px-2">{item.qty}</span>
-                  <button className="px-2 py-1 bg-green-100 rounded hover:bg-green-200 font-bold">+</button>
+                <div className="text-right">
+                  <p className="text-lg font-semibold">
+                    ₹{item.quantity * item.product.price}
+                  </p>
+                  <button
+                    onClick={() => removeItem(item.product._id)}
+                    className="mt-2 text-red-600 hover:underline"
+                  >
+                    Remove
+                  </button>
                 </div>
               </div>
             ))}
           </div>
-        )}
-        <div className="flex justify-between items-center mb-6">
-          <div className="text-xl font-bold text-gray-900">Total</div>
-          <div className="text-2xl font-extrabold text-green-700">${total.toFixed(2)}</div>
-        </div>
-        <button
-          className="w-full bg-green-700 text-white py-4 rounded-lg font-bold text-lg hover:bg-green-800 transition shadow"
-          disabled={items.length === 0}
-          onClick={onCheckout}
-        >
-          Checkout
-        </button>
-      </div>
+
+          {/* Total + Actions */}
+          <div className="mt-8 flex flex-col md:flex-row justify-between items-center">
+            <p className="text-xl font-bold">
+              Total: ₹{getTotal().toLocaleString('en-IN')}
+            </p>
+            <div className="mt-4 md:mt-0 space-x-4">
+              <button
+                onClick={clearCart}
+                className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700"
+              >
+                Clear Cart
+              </button>
+              <button
+                onClick={checkout}
+                className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+              >
+                Checkout
+              </button>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
-} 
+};
+
+export default Cart;
