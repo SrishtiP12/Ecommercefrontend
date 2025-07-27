@@ -14,7 +14,7 @@ const Register: React.FC<RegisterProps> = ( {onRegisterSuccess} ) => {
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e : any) => {
     e.preventDefault();
     setError("");
     try {
@@ -38,7 +38,7 @@ const Register: React.FC<RegisterProps> = ( {onRegisterSuccess} ) => {
         // onRegister(res.data);
       }
       // Redirect or success message can go here
-    } catch (err) {
+    } catch (err : any) {
       setError(
         err.response?.data?.message || "Registration failed. Please try again."
       );

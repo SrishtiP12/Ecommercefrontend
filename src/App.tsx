@@ -8,8 +8,14 @@ import Cart from "./components/Cart";
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
+interface MainAppProps {
+  cartItems : any,
+  setCartItems :any,
+  user : any
+}
 
-function MainApp({ cartItems, setCartItems, user }) {
+
+const MainApp: React.FC <MainAppProps> = ({ cartItems, setCartItems, user }) => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<String>();
@@ -61,17 +67,17 @@ function MainApp({ cartItems, setCartItems, user }) {
   const navigate = useNavigate();
 
   // Add to cart handler (for demo, just adds first product)
-  const addToCart = async(product) => {
+  const addToCart = async(product:any) => {
     console.log("add to cart func");
     
-    setCartItems((prev) => {
-      const exists = prev.find((item) => item._id === product._id);
+    setCartItems((prev:any) => {
+      const exists = prev.find((item:any) => item._id === product._id);
       console.log(exists);
       
       if (exists) {
         console.log(exists);
         
-        return prev.map((item) =>            
+        return prev.map((item : any) =>            
           item._id === product._id ? { ...item, qty: item.qty + 1 } : item 
             
         );
@@ -81,7 +87,7 @@ function MainApp({ cartItems, setCartItems, user }) {
     );
     // Send to backend
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("userToken");
       console.log(token);
       
 
@@ -91,7 +97,7 @@ function MainApp({ cartItems, setCartItems, user }) {
       }
     
       console.log(product);
-      console.log(`${localStorage.getItem('token')}`);
+      console.log(`${localStorage.getItem('userToken')}`);
     
     
       var res = await axios.post("http://localhost:5000/api/cart/add", {
@@ -99,13 +105,13 @@ function MainApp({ cartItems, setCartItems, user }) {
           product: product,
       }, {
           headers: {
-              Authorization: `Bearer ${localStorage.getItem('token')}`,
+              Authorization: `Bearer ${localStorage.getItem('userToken')}`,
               'Content-Type': 'application/json'
           }
       });
 
     console.log("✅ Backend Response:", res.data);
-  } catch (error) {
+  } catch (error : any) {
     console.error("❌ Error sending to backend:", error.response?.data || error.message);
   }
   };
@@ -383,7 +389,7 @@ export default function App() {
     // You might also want to load cart items from localStorage here if applicable
   }, []);
 
-  const handleAuthSuccess = (userData) => {
+  const handleAuthSuccess = (userData : any) => {
     setUser(userData); // Set the user state
     // Token is already stored in localStorage by Login/Register component
   };
@@ -399,7 +405,7 @@ export default function App() {
         <Route path="/login" element={<Login onLogin={setUser} />} />
         <Route path="/register" element={<Register onRegisterSuccess={handleAuthSuccess}/>} />
         <Route path="/cart" element={<Cart items={cartItems} onCheckout={() => alert('Checkout!')} />} />
-        <Route path="/profile" element={<Profile user={user} />} />
+        <Route path="/profile" element={<Profile />} />
       </Routes>
     </Router>
   );
