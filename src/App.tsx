@@ -12,7 +12,7 @@ import 'react-toastify/dist/ReactToastify.css';
 function MainApp({ cartItems, setCartItems, user }) {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<String>();
 
   // Timer state for Exclusive Offer
   const [timer, setTimer] = useState({ days: 2, hours: 14, mins: 36, secs: 0 });
@@ -36,9 +36,9 @@ function MainApp({ cartItems, setCartItems, user }) {
   // Timer logic
   useEffect(() => {
     // Set initial offer end time (e.g., 2 days, 14 hours, 36 mins from now)
-    const offerEnd = new Date(Date.now() + ((2 * 24 + 14) * 60 + 36) * 60 * 1000);
+    const offerEnd:any = new Date(Date.now() + ((2 * 24 + 14) * 60 + 36) * 60 * 1000);
     const interval = setInterval(() => {
-      const now = new Date();
+      const now:any = new Date();
       const diff = offerEnd - now;
       if (diff <= 0) {
         setTimer({ days: 0, hours: 0, mins: 0, secs: 0 });
@@ -53,6 +53,9 @@ function MainApp({ cartItems, setCartItems, user }) {
     }, 1000);
     return () => clearInterval(interval);
   }, []);
+
+  //auth Logic
+  
 
   const bestSelling = products.slice(0, 3);
   const navigate = useNavigate();
@@ -77,16 +80,18 @@ function MainApp({ cartItems, setCartItems, user }) {
     } 
     );
     // Send to backend
-  try {
-    const token = localStorage.getItem("token");
+    try {
+      const token = localStorage.getItem("token");
+      console.log(token);
+      
 
-    if (!token) {
-      console.warn("⚠️ No token found in localStorage");
-      return;
-    }
+      if (!token) {
+        console.warn("⚠️ No token found in localStorage");
+        return;
+      }
     
-    console.log(product);
-    console.log(`${localStorage.getItem('token')}`);
+      console.log(product);
+      console.log(`${localStorage.getItem('token')}`);
     
     
       var res = await axios.post("http://localhost:5000/api/cart/add", {
@@ -174,9 +179,9 @@ function MainApp({ cartItems, setCartItems, user }) {
           <div className="text-center text-red-500">{error}</div>
         ) : (
           <div className="flex flex-col md:flex-row gap-10 justify-center items-center md:items-stretch">
-            {bestSelling.map((item, idx) => (
-              <div key={item._id || idx} className="bg-white rounded-3xl shadow-xl p-8 flex flex-col items-center w-72 hover:scale-105 hover:shadow-2xl transition-all duration-300 border border-green-50">
-                <img src={item.image || 'https://via.placeholder.com/160x192'} alt={item.name} className="rounded-2xl w-48 h-56 object-cover mb-5 shadow-md" />
+            {bestSelling.map((item:any, idx) => (
+              <div key={item?._id || idx} className="bg-white rounded-3xl shadow-xl p-8 flex flex-col items-center w-72 hover:scale-105 hover:shadow-2xl transition-all duration-300 border border-green-50">
+                <img src={item?.image || 'https://via.placeholder.com/160x192'} alt={item.name} className="rounded-2xl w-48 h-56 object-cover mb-5 shadow-md" />
                 <div className="font-semibold text-lg mb-1 text-gray-900">{item.name}</div>
                 <div className="text-green-700 text-xl font-bold mb-2">${item.price}</div>
                 <div className="text-yellow-500 text-base">★ {item.rating || 4.8} <span className="text-gray-400 text-sm">({item.numReviews || 100})</span></div>
@@ -201,7 +206,7 @@ function MainApp({ cartItems, setCartItems, user }) {
     <div className="text-center text-red-500">{error}</div>
   ) : (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-12">
-      {products.map((item, idx) => (
+      {products.map((item:any, idx) => (
         <div
           key={item._id || idx}
           className="bg-green-50 rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-300 p-6 flex flex-col items-center border border-green-100"
@@ -367,6 +372,22 @@ export default function App() {
   const [cartItems, setCartItems] = useState([]);
   const [user, setUser] = useState(null);
 
+  // Effect to load user from localStorage on initial app load
+  useEffect(() => {
+    const storedUser = localStorage.getItem('userInfo');
+    console.log("Stored User : "+storedUser);
+    
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+    // You might also want to load cart items from localStorage here if applicable
+  }, []);
+
+  const handleAuthSuccess = (userData) => {
+    setUser(userData); // Set the user state
+    // Token is already stored in localStorage by Login/Register component
+  };
+
   if(cartItems){
     console.log(cartItems);
     
@@ -376,7 +397,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<MainApp cartItems={cartItems} setCartItems={setCartItems} user={user} />} />
         <Route path="/login" element={<Login onLogin={setUser} />} />
-        <Route path="/register" element={<Register />} />
+        <Route path="/register" element={<Register onRegisterSuccess={handleAuthSuccess}/>} />
         <Route path="/cart" element={<Cart items={cartItems} onCheckout={() => alert('Checkout!')} />} />
         <Route path="/profile" element={<Profile user={user} />} />
       </Routes>

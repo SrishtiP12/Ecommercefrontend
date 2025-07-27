@@ -1,19 +1,42 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
-export default function Register({ onRegister }) {
+interface RegisterProps {
+  onRegisterSuccess: (data: any) => void; 
+}
+
+const Register: React.FC<RegisterProps> = ( {onRegisterSuccess} ) => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     try {
       const res = await axios.post("/api/users/register", { name, email, password });
-      if (onRegister) onRegister(res.data);
+      if (onRegisterSuccess) {
+        const { token, ...userData } = res.data;
+
+        console.log("token :: "+token);
+        
+
+        // 1. Store the token and user info in localStorage
+        localStorage.setItem('userToken', token);
+        localStorage.setItem('userInfo', JSON.stringify(userData)); // Store other user details
+
+        if (onRegisterSuccess) { // Renamed from onRegister for clarity
+          onRegisterSuccess(userData); // Pass user data (excluding token, as token is in localStorage)
+        }
+
+        // 3. Redirect to a dashboard or home page after successful registration
+        navigate('/'); // Or navigate('/dashboard')
+        // onRegister(res.data);
+      }
       // Redirect or success message can go here
     } catch (err) {
       setError(
@@ -100,3 +123,6 @@ export default function Register({ onRegister }) {
     </div>
   );
 }
+
+
+export default Register
